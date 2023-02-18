@@ -26,15 +26,17 @@ func (q *PostUserLoginFlow) Do() (*LoginResponse, error) {
 	// 对参数进行合法性验证
 
 	// 更新数据到数据库
-	if err := q.UpdateData(); err != nil {
-
+	if err := q.updateData(); err != nil {
+		return nil, err
 	}
 	// 打包response
-
+	if err := q.packResponse(); err != nil {
+		return nil, err
+	}
 	return q.data, nil
 }
 
-func (q *PostUserLoginFlow) UpdateData() error {
+func (q *PostUserLoginFlow) updateData() error {
 	// 准备好userInfo,默认name为username
 	userLogin := model.UserLogin{Username: q.username, Password: q.password}
 	userInfo := model.UserInfo{User: &userLogin, Name: q.username}
@@ -54,5 +56,13 @@ func (q *PostUserLoginFlow) UpdateData() error {
 
 	q.token = q.username + q.password
 	q.userId = userInfo.Id
+	return nil
+}
+
+func (q *PostUserLoginFlow) packResponse() error {
+	q.data = &LoginResponse{
+		UserId: q.userId,
+		Token:  q.token,
+	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -26,7 +27,18 @@ func NewUserLoginDao() *UserLoginDAO {
 	return userLoginDao
 }
 
-func (d UserLoginDAO) IsUserExistByUsername(username string) bool {
+func (u *UserLoginDAO) QueryUserLogin(username string, password string, login *UserLogin) error {
+	if login == nil {
+		return errors.New("结构体指针为空")
+	}
+	DB.Where("username = ? and password = ?", username, password).First(login)
+	if login.Id == 0 {
+		return errors.New("用户不存在，账号或密码错误")
+	}
+	return nil
+}
+
+func (u *UserLoginDAO) IsUserExistByUsername(username string) bool {
 	var userLogin UserLogin
 	DB.Where("username = ?", username).First(&userLogin)
 	if userLogin.Id == 0 {

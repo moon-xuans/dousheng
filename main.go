@@ -7,7 +7,7 @@ import (
 
 func main() {
 	r := router.InitRouter()
-	err := r.Run(fmt.Sprintf(":%d", 8888))
+	err := r.Run(fmt.Sprintf(":%d", 8080))
 	if err != nil {
 		return
 	}
