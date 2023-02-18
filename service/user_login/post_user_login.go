@@ -1,7 +1,7 @@
 package user_login
 
 import (
-	"dousheng/models"
+	"dousheng/model"
 	"errors"
 )
 
@@ -36,17 +36,17 @@ func (q *PostUserLoginFlow) Do() (*LoginResponse, error) {
 
 func (q *PostUserLoginFlow) UpdateData() error {
 	// 准备好userInfo,默认name为username
-	userLogin := models.UserLogin{Username: q.username, Password: q.password}
-	userInfo := models.UserInfo{User: &userLogin, Name: q.username}
+	userLogin := model.UserLogin{Username: q.username, Password: q.password}
+	userInfo := model.UserInfo{User: &userLogin, Name: q.username}
 
 	// 判断用户名是否已经存在
-	userLoginDAO := models.NewUserLoginDao()
+	userLoginDAO := model.NewUserLoginDao()
 	if userLoginDAO.IsUserExistByUsername(q.username) {
 		return errors.New("用户已存在")
 	}
 
 	// 更新操作,由于userLogin属于userInfo，故更新userInfo即可，并且传入的是指针
-	userInfoDAO := models.NewUserInfoDAO()
+	userInfoDAO := model.NewUserInfoDAO()
 	err := userInfoDAO.AddUserInfo(&userInfo)
 	if err != nil {
 		return err

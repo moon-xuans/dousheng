@@ -1,13 +1,13 @@
 package router
 
 import (
-	"dousheng/models"
+	"dousheng/model"
 
 	"github.com/gin-gonic/gin"
 )
 
 func InitRouter() *gin.Engine {
-	models.InitDB()
+	model.InitDB()
 	r := gin.Default()
 
 	return r
