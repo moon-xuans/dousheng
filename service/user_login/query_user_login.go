@@ -1,6 +1,14 @@
 package user_login
 
-import "dousheng/model"
+import (
+	"dousheng/middleware"
+	"dousheng/model"
+	"errors"
+)
+
+const (
+	MaxUsernameLength = 100
+)
 
 type LoginResponse struct {
 	UserId int64  `json:"user_id"`
@@ -26,6 +34,9 @@ type QueryUserLoginFlow struct {
 
 func (q *QueryUserLoginFlow) Do() (*LoginResponse, error) {
 	// 对参数进行合法性验证
+	if err := q.checkData(); err != nil {
+		return nil, err
+	}
 	// 准备好数据
 	if err := q.prepareData(); err != nil {
 		return nil, err
@@ -35,6 +46,19 @@ func (q *QueryUserLoginFlow) Do() (*LoginResponse, error) {
 		return nil, err
 	}
 	return q.data, nil
+}
+
+func (q *QueryUserLoginFlow) checkData() error {
+	if q.username == "" {
+		return errors.New("用户名为空")
+	}
+	if len(q.username) > MaxUsernameLength {
+		return errors.New("用户名长度超出限制")
+	}
+	if q.password == "" {
+		return errors.New("密码为空")
+	}
+	return nil
 }
 
 func (q *QueryUserLoginFlow) prepareData() error {
@@ -47,9 +71,11 @@ func (q *QueryUserLoginFlow) prepareData() error {
 	}
 	q.userId = login.UserInfoId
 
-	// token
-	token := q.username + q.password
-
+	// 准备颁发token
+	token, err := middleware.ReleaseToken(login)
+	if err != nil {
+		return err
+	}
 	q.token = token
 	return nil
 }

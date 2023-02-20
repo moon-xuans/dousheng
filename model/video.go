@@ -18,8 +18,8 @@ type Video struct {
 	Title         string      `json:"title,omitempty"`           // 视频标题
 	Users         []*UserInfo `json:"-" gorm:"many2many:user_favor_videos;"`
 	Comments      []*Comment  `json:"-"`
-	CreateAt      time.Time   `json:"-"`
-	UpdateAt      time.Time   `json:"-"`
+	CreatedAt     time.Time   `json:"-"`
+	UpdatedAt     time.Time   `json:"-"`
 }
 
 type VideoDAO struct {
@@ -51,4 +51,24 @@ func (v *VideoDAO) QueryVideoCountByUserId(userId int64, count *int64) error {
 		return errors.New("QueryVideoCountByUserId count 空指针")
 	}
 	return DB.Model(&Video{}).Where("user_info_id = ?", userId).Count(count).Error
+}
+
+func (v *VideoDAO) QueryVideoListByUserId(userId int64, videoList *[]*Video) error {
+	if videoList == nil {
+		return errors.New("QueryVideoListByUserId videoList 空指针")
+	}
+	return DB.Where("user_info_id = ?", userId).
+		Select([]string{"id", "user_info_id", "play_url", "cover_url", "favorite_count", "comment_count", "is_favorite", "title"}).
+		Find(videoList).Error
+}
+
+// QueryVideoListByLimitAndTime 返回按投稿时间倒序的视频列表，并限制最多limit个
+func (v *VideoDAO) QueryVideoListByLimitAndTime(limit int, latestTime time.Time, videoList *[]*Video) error {
+	if videoList == nil {
+		return errors.New("QueryVideoListByLimitAndTime videoList 空指针")
+	}
+	return DB.Model(&Video{}).Where("created_at < ?", latestTime).
+		Order("created_at ASC").Limit(limit).
+		Select([]string{"id", "user_info_id", "play_url", "cover_url", "favorite_count", "comment_count", "is_favorite", "title", "created_at", "updated_at"}).
+		Find(videoList).Error
 }

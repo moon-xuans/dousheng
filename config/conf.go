@@ -15,8 +15,14 @@ type Mysql struct {
 	Username  string
 	Password  string
 	Charset   string
-	ParseTime bool `toml:parse_time`
+	ParseTime bool `toml:"parse_time"`
 	Loc       string
+}
+
+type Redis struct {
+	IP       string
+	Port     int
+	Database int
 }
 
 type Server struct {
@@ -25,12 +31,13 @@ type Server struct {
 }
 
 type Path struct {
-	FfmpegPath       string `toml"ffmpeg_path"`
-	StaticSourcePath string `toml:static_source_path`
+	FfmpegPath       string `toml:"ffmpeg_path"`
+	StaticSourcePath string `toml:"static_source_path"`
 }
 
 type Config struct {
-	DB     Mysql `toml:"mysql"'`
+	DB     Mysql `toml:"mysql"`
+	RDB    Redis `toml:"redis"`
 	Server `toml:"server"`
 	Path   `toml:"path"`
 }
@@ -43,6 +50,7 @@ func init() {
 	}
 	// 去除左右的空格
 	strings.Trim(Info.Server.IP, " ")
+	strings.Trim(Info.RDB.IP, " ")
 	strings.Trim(Info.DB.Host, " ")
 }
 

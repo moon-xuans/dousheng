@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -11,9 +12,16 @@ var (
 )
 
 type UserInfo struct {
-	Id   int64      `json:"id" gorm:"id, omitempty"`
-	Name string     `json:"name" gorm:"name, omitempty"`
-	User *UserLogin `json:"-"`
+	Id            int64       `json:"id" gorm:"id, omitempty"`
+	Name          string      `json:"name" gorm:"name, omitempty"`
+	FollowCount   int64       `json:"follow_count" gorm:"follow_count,omitempty"`     // 关注总数
+	FollowerCount int64       `json:"follower_count" gorm:"follower_count,omitempty"` // 粉丝总数
+	IsFollow      bool        `json:"is_follow" gorm:"is_follow,omitempty"`           // true-已关注，false-未关注
+	User          *UserLogin  `json:"-"`                                              //用户与账号密码之间的一对一
+	Videos        []*Video    `json:"-"`                                              //用户与投稿视频的一对多
+	Follows       []*UserInfo `json:"-" gorm:"many2many:user_relations;"`             //用户之间的多对多
+	FavorVideos   []*Video    `json:"-" gorm:"many2many:user_favor_videos;"`          //用户与点赞视频之间的多对多
+	Comments      []*Comment  `json:"-"`                                              //用户与评论的一对多
 }
 
 type UserInfoDAO struct {
@@ -29,6 +37,29 @@ func NewUserInfoDAO() *UserInfoDAO {
 		userInfoDAO = new(UserInfoDAO)
 	})
 	return userInfoDAO
+}
+
+func (u *UserInfoDAO) QueryUserInfoById(userId int64, userInfo *UserInfo) error {
+	if userInfo == nil {
+		return ErrIvdPtr
+	}
+	DB.Where("id = ?", userId).Select([]string{"id", "name", "follow_count", "follower_count", "is_follow"}).First(userInfo)
+	// id为零值，说明sql执行失败
+	if userInfo.Id == 0 {
+		return errors.New("该用户不存在")
+	}
+	return nil
+}
+
+func (u *UserInfoDAO) IsUserExistById(userId int64) bool {
+	var userInfo UserInfo
+	if err := DB.Where("id = ?", userId).Select("id").First(&userInfo).Error; err != nil {
+		log.Println(err)
+	}
+	if userInfo.Id == 0 {
+		return false
+	}
+	return true
 }
 
 func (u *UserInfoDAO) AddUserInfo(userInfo *UserInfo) error {

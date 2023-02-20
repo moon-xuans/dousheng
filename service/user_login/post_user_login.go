@@ -1,6 +1,7 @@
 package user_login
 
 import (
+	"dousheng/middleware"
 	"dousheng/model"
 	"errors"
 )
@@ -24,7 +25,9 @@ type PostUserLoginFlow struct {
 
 func (q *PostUserLoginFlow) Do() (*LoginResponse, error) {
 	// 对参数进行合法性验证
-
+	if err := q.checkData(); err != nil {
+		return nil, err
+	}
 	// 更新数据到数据库
 	if err := q.updateData(); err != nil {
 		return nil, err
@@ -34,6 +37,19 @@ func (q *PostUserLoginFlow) Do() (*LoginResponse, error) {
 		return nil, err
 	}
 	return q.data, nil
+}
+
+func (q *PostUserLoginFlow) checkData() error {
+	if q.username == "" {
+		return errors.New("用户名为空")
+	}
+	if len(q.username) > MaxUsernameLength {
+		return errors.New("用户名长度超出限制")
+	}
+	if q.password == "" {
+		return errors.New("密码为空")
+	}
+	return nil
 }
 
 func (q *PostUserLoginFlow) updateData() error {
@@ -54,7 +70,12 @@ func (q *PostUserLoginFlow) updateData() error {
 		return err
 	}
 
-	q.token = q.username + q.password
+	// 颁发token
+	token, err := middleware.ReleaseToken(userLogin)
+	if err != nil {
+		return err
+	}
+	q.token = token
 	q.userId = userInfo.Id
 	return nil
 }

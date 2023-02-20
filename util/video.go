@@ -1,20 +1,18 @@
 package util
 
 import (
+	"dousheng/cache"
 	"dousheng/config"
 	"dousheng/model"
+	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
-)
-
-var (
-	IP   = "192.168.1.6"
-	Port = "8080"
+	"time"
 )
 
 func GetFileUrl(fileName string) string {
-	base := fmt.Sprintf("http://%s:%d/static/%s", IP, Port, fileName)
+	base := fmt.Sprintf("http://%s:%d/static/%s", config.Info.IP, config.Info.Port, fileName)
 	return base
 }
 
@@ -44,4 +42,32 @@ func SaveImageFromVideo(name string, isDebug bool) error {
 		return err
 	}
 	return v2i.ExecCommand(queryString)
+}
+
+// FillVideoListFields 填充每个视频的作者信息(因为作者与视频的一对多关系，数据库中存入的是作者的id)
+// 当userId > 0，我们判断当前为登陆状态，其余情况为登陆状态，则不需要填充IsFavorite字段
+func FillVideoListFields(userId int64, videos *[]*model.Video) (*time.Time, error) {
+	size := len(*videos)
+	if videos == nil || size == 0 {
+		return nil, errors.New("util.FillVideoListFields videos 为空")
+	}
+	dao := model.NewUserInfoDAO()
+	p := cache.NewProxyIndexMap()
+
+	latestTime := (*videos)[size-1].CreatedAt // 获取最近的投稿时间
+	// 添加作者信息，以及is_follow状态
+	for i := 0; i < size; i++ {
+		var userInfo model.UserInfo
+		err := dao.QueryUserInfoById((*videos)[i].UserInfoId, &userInfo)
+		if err != nil {
+			continue
+		}
+		userInfo.IsFollow = p.GetUserRelation(userId, userInfo.Id) //根据cache更新是否被关注
+		(*videos)[i].Author = userInfo
+		// 填充有登陆信息的点赞状态
+		if userId > 0 {
+			(*videos)[i].IsFavorite = p.GetVideoFavorState(userId, (*videos)[i].Id)
+		}
+	}
+	return &latestTime, nil
 }

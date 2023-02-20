@@ -15,18 +15,17 @@ type UserLoginResponse struct {
 
 func UserLoginHandler(c *gin.Context) {
 	username := c.Query("username")
-	password := c.Query("password")
-	//raw, _ := c.Get("password")
-	//password, ok := raw.(string)
-	//if !ok {
-	//	c.JSON(http.StatusOK, UserLoginResponse{
-	//		CommonResponse: model.CommonResponse{
-	//			StatusCode: 1,
-	//			StatusMsg:  "密码解析错误",
-	//		},
-	//	})
-	//	return
-	//}
+	raw, _ := c.Get("password")
+	password, ok := raw.(string)
+	if !ok {
+		c.JSON(http.StatusOK, UserLoginResponse{
+			CommonResponse: model.CommonResponse{
+				StatusCode: 1,
+				StatusMsg:  "密码解析错误",
+			},
+		})
+		return
+	}
 	userLoginResponse, err := user_login.QueryUserLogin(username, password)
 
 	// 用户不存在返回对应的错误
