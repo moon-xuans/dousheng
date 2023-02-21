@@ -35,17 +35,29 @@ type Path struct {
 	StaticSourcePath string `toml:"static_source_path"`
 }
 
+type Minio struct {
+	Bucket          string
+	VideoDir        string `toml:"video_dir"`
+	ImageDir        string `toml:"image_dir"`
+	MPort           int    `toml:"minio_port"`
+	AccessKeyId     string `toml:"access_key_id"`
+	SecretAccessKey string `toml:"secret_access_key"`
+}
+
 type Config struct {
 	DB     Mysql `toml:"mysql"`
 	RDB    Redis `toml:"redis"`
 	Server `toml:"server"`
 	Path   `toml:"path"`
+	Minio  `toml:"minio"`
 }
 
 var Info Config
 
+const ConfFile = "./config/config.toml"
+
 func init() {
-	if _, err := toml.DecodeFile("E:\\code\\GoCode\\src\\dousheng\\config\\config.toml", &Info); err != nil {
+	if _, err := toml.DecodeFile(ConfFile, &Info); err != nil {
 		panic(err)
 	}
 	// 去除左右的空格

@@ -37,8 +37,8 @@ func (f *PostVideoFlow) Do() error {
 }
 
 func (f *PostVideoFlow) prepareParam() {
-	f.videoName = util.GetFileUrl(f.videoName)
-	f.coverName = util.GetFileUrl(f.coverName)
+	f.videoName = util.GetVideoFileUrl(f.videoName)
+	f.coverName = util.GetImageFileUrl(f.coverName)
 }
 
 func (f *PostVideoFlow) publish() error {

@@ -5,6 +5,7 @@ import (
 	"dousheng/service/video"
 	"dousheng/util"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -53,26 +54,46 @@ func PublishVideoHandler(c *gin.Context) {
 			continue
 		}
 		name := util.NewFileName(userId) // 根据userId得到唯一的文件名
-		fileName := name + suffix
-		savePath := filepath.Join("./static", fileName)
-		err = c.SaveUploadedFile(file, savePath)
+		videoName := name + suffix
+
+		reader, err := file.Open()
 		if err != nil {
 			PublishVideoError(c, err.Error())
 			continue
 		}
+		videoPath, err := util.UploadFile(videoName, "video", reader)
+		if err != nil {
+			PublishVideoError(c, err.Error())
+			continue
+		}
+
 		// 截取一帧画面作为封面
-		err = util.SaveImageFromVideo(name, true)
+		err = util.SaveImageFromVideo(videoPath, name, true)
 		if err != nil {
 			PublishVideoError(c, err.Error())
 			continue
 		}
+		// 将保存在服务器上的图片上传至minio
+		imageName := name + util.GetDefaultImageSuffix()
+		imagePath := filepath.Join("./static", imageName)
+		reader, err = os.Open(imagePath)
+		if err != nil {
+			PublishVideoError(c, err.Error())
+			continue
+		}
+		imagePath, err = util.UploadFile(imageName, "image", reader)
+		if err != nil {
+			PublishVideoError(c, err.Error())
+			continue
+		}
+
 		// 数据库持久化
-		err := video.PostVideo(userId, fileName, name+util.GetDefaultImageSuffix(), title)
+		err = video.PostVideo(userId, videoName, imageName, title)
 		if err != nil {
 			PublishVideoError(c, err.Error())
 			continue
 		}
-		PublishVideoOk(c, fileName+"上传成功")
+		PublishVideoOk(c, videoName+"上传成功")
 	}
 }
 
