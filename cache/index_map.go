@@ -45,9 +45,29 @@ func (i *ProxyIndexMap) GetVideoFavorState(userId, videoId int64) bool {
 	return ret.Val()
 }
 
+// UpdateVideoFavorState 更新点赞状态，state:true为点赞，false为取消点赞
+func (i *ProxyIndexMap) UpdateVideoFavorState(userId, videoId int64, state bool) {
+	key := fmt.Sprintf("%s:%d", favor, userId)
+	if state {
+		rdb.SAdd(ctx, key, videoId)
+		return
+	}
+	rdb.SRem(ctx, key, videoId)
+}
+
 // GetUserRelation 得到关注状态
 func (i *ProxyIndexMap) GetUserRelation(userId, followId int64) bool {
 	key := fmt.Sprintf("%s:%d", relation, userId)
 	ret := rdb.SIsMember(ctx, key, followId)
 	return ret.Val()
+}
+
+// UpdateUserRelation 更新点赞状态， state：true为点关注，false为取消关注
+func (i *ProxyIndexMap) UpdateUserRelation(userId, followId int64, state bool) {
+	key := fmt.Sprintf("%s:%d", relation, userId)
+	if state {
+		rdb.SAdd(ctx, key, followId)
+		return
+	}
+	rdb.SRem(ctx, key, followId)
 }
